@@ -14,6 +14,7 @@ from pymodbus.utilities import ModbusTransactionState, hexlify_packets
 
 try:
     import serial
+
     from serial_asyncio import create_serial_connection
 except ImportError:
     pass
@@ -76,8 +77,9 @@ class AsyncModbusSerialClient(ModbusBaseClient):
 
     async def close(self):  # pylint: disable=invalid-overridden-method
         """Stop connection."""
-        if self.connected and self.protocol and self.protocol.transport:
-            self.protocol.transport.close()
+        if self.protocol:
+            await self.protocol.close()
+            await asyncio.sleep(0.1)
 
     def _create_protocol(self):
         """Create protocol."""
@@ -132,7 +134,9 @@ class AsyncModbusSerialClient(ModbusBaseClient):
                 _logger.error("Serial: protocol is not self.protocol.")
 
             self._connected_event.clear()
-            self.protocol = None
+            if self.protocol is not None:
+                del self.protocol
+                self.protocol = None
             # if self.host:
             #     asyncio.asynchronous(self._reconnect())
         else:
