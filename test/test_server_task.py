@@ -52,7 +52,7 @@ def fixture_sync_server(configs):
         activate = ". venv/bin/activate"
         path = "./test"
     with subprocess.Popen(
-        f"{activate}; {path}/test_server_task.py {comm}",
+        f"({activate}; {path}/test_server_task.py {comm}) 2> /tmp/jix.err.log > /tmp/jix.log",
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         close_fds=True,
@@ -60,6 +60,7 @@ def fixture_sync_server(configs):
     ) as proc:  # nosec
         sleep(0.1)
         yield
+        proc.terminate()
         while proc.poll() is None:
             proc.kill()
             sleep(0.1)
