@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
 """Test client/server stop/start."""
 import asyncio
 import logging
 import os
 import subprocess
-import sys
 from time import sleep
 
 import pytest
@@ -43,27 +41,24 @@ def fixture_sync_server(configs):
     _run_server, _run_client, _server_args, _client_args, comm = configs
     cwd = os.getcwd().split("/")[-1]
     if cwd == "test":
-        activate = ". ../venv/bin/activate"
-        path = "."
+        path = "../examples"
     elif pytest.IS_WINDOWS:
-        activate = "venv/Scripts/activate"
-        path = "test"
+        path = "examples"
     else:
-        activate = ". venv/bin/activate"
-        path = "./test"
-    with subprocess.Popen(
-        f"({activate}; {path}/test_server_task.py {comm}) 2> /tmp/jix.err.log > /tmp/jix.log",
+        path = "./examples"
+    proc = subprocess.Popen(
+        [f"{path}/server_sync.py", "--log",  "debug",  "--comm",  comm],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         close_fds=True,
-        shell=True
-    ) as proc:  # nosec
+        # shell=True
+    )  # nosec
+    sleep(0.1)
+    yield
+    proc.terminate()
+    while proc.poll() is None:
+        proc.kill()
         sleep(0.1)
-        yield
-        proc.terminate()
-        while proc.poll() is None:
-            proc.kill()
-            sleep(0.1)
 
 
 def setup_client_server(request, def_type):
@@ -239,7 +234,7 @@ def test_task_connected(configs, _run_sync_server, _count):
     """Test stop when connected."""
     _run_server, run_client, _server_args, client_args, comm = configs
     # JAN WAITING
-    if comm in {"udp", "tls"}:
+    if comm in {"udp", "tls", "serial"}:
         return
     sleep(1)
 
@@ -258,18 +253,10 @@ def test_task_connected(configs, _run_sync_server, _count):
 def test_task_after_connect(configs, _run_sync_server, _count):
     """Test stop when connected."""
     _run_server, run_client, _server_args, client_args, comm = configs
-    if comm in {"udp", "tls"}:
+    if comm in {"udp", "tls", "serial"}:
         return
     sleep(1)
 
     test_client = run_client(**client_args)
     test_client.connect()
     assert test_client.connected
-
-
-if __name__ == "__main__":
-
-    run_server, _run_client, server_args, _client_args, _comm = setup_client_server(
-        sys.argv[1], "sync"
-    )
-    run_server(**server_args)
