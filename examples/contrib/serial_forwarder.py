@@ -34,8 +34,8 @@ class SerialForwarderTCPServer:
 
     async def run(self):
         """Run the server"""
-        port, baudrate, server_port, server_ip, slaves = get_commandline()
-        client = ModbusSerialClient(method="rtu", port=port, baudrate=baudrate)
+        port, baudrate, server_port, server_ip, slaves, parity = get_commandline()
+        client = ModbusSerialClient(method="rtu", port=port, baudrate=baudrate, parity=parity)
         message = f"RTU bus on {port} - baudrate {baudrate}"
         _logger.info(message)
         store = {}
@@ -68,6 +68,7 @@ def get_commandline():
         "--port", help="RTU serial port", default="/dev/ttyUSB0", type=str
     )
     parser.add_argument("--baudrate", help="RTU baudrate", default=9600, type=int)
+    parser.add_argument("--parity", help="Parity", default="N", type=str)
     parser.add_argument("--server_port", help="server port", default=5020, type=int)
     parser.add_argument("--server_ip", help="server IP", default="127.0.0.1", type=str)
     parser.add_argument(
@@ -82,7 +83,7 @@ def get_commandline():
     )
     if not args.slaves:
         args.slaves = {1, 2, 3}
-    return args.port, args.baudrate, args.server_port, args.server_ip, args.slaves
+    return args.port, args.baudrate, args.server_port, args.server_ip, args.slaves, args.parity
 
 
 if __name__ == "__main__":
